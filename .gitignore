@@ -1,0 +1,87 @@
+# ============================================================
+# 白名單模式:預設忽略所有東西,只放行指定的文字檔
+# 要納入新副檔名時,在「放行」區塊加一行 !*.副檔名
+# ============================================================
+
+# --- 1. 先全部忽略 ---
+*
+
+# --- 2. 放行目錄本身(否則 git 不會遞迴進去找白名單檔案)---
+!*/
+
+# --- 3. 放行文字檔 ---
+!.gitignore
+!*.md
+!*.py
+!*.pyi
+!*.ipynb
+!*.csv
+!*.tsv
+!*.json
+!*.yml
+!*.yaml
+!*.toml
+!*.ini
+!*.cfg
+!*.txt
+!*.sql
+!*.sh
+!*.ps1
+!*.bat
+!requirements*.txt
+!.gitattributes
+!.editorconfig
+
+# ============================================================
+# 4. 重新忽略(以下規則優先權高於上方白名單)
+# ============================================================
+
+# --- 敏感資料:API Key、帳密、憑證,一律不進版控 ---
+.env
+.env.*
+!.env.example
+*secret*
+*secrets*
+*credential*
+*credentials*
+*password*
+*token*
+*apikey*
+*api_key*
+*_key.json
+service-account*.json
+client_secret*.json
+*.pem
+*.key
+*.p12
+*.pfx
+config.local.*
+settings.local.*
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+*.egg-info/
+build/
+dist/
+
+# --- 系統與編輯器 ---
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# --- Google Drive 捷徑檔(本機無實際內容)---
+*.gdoc
+*.gsheet
+*.gslides
+*.gdraw
+*.gform
