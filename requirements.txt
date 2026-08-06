@@ -1,0 +1,8 @@
+# 本機已安裝(Python 3.12.0),列出供他機重建環境用
+requests
+pandas
+openpyxl
+
+# 永豐金證券 Shioaji API — 查庫存與成本用
+# 安裝:py -m pip install shioaji
+shioaji
