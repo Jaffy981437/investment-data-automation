@@ -43,15 +43,45 @@
 └─ VGLT.gsheet                     ← 同上
 ```
 
-### 規劃結構(尚未建立,開始寫程式時再依需要建)
+### 程式結構(2026-08-06 建立)
 
 ```
 13_投資/
-├─ scripts/     # Python 抓取與分析腳本
-├─ data/        # 抓回來的原始資料(csv / json),按來源與日期分
-├─ reports/     # 產出的報表(md / html / xlsx)
-└─ docs/        # 資料來源說明、欄位定義、操作筆記
+├─ scripts/
+│  ├─ fetch_prices.py    # 抓上市+上櫃每日收盤價 → data/prices/
+│  ├─ make_report.py     # 庫存 × 收盤價 → reports/ 持股摘要
+│  └─ update_excel.py    # 回填收盤價到大俠武林 Excel(預設預演)
+├─ data/
+│  ├─ prices/            # 每日收盤價 csv(不進版控)
+│  └─ holdings/          # 庫存與成本(不進版控,僅範例檔進版控)
+│     └─ holdings.example.csv
+├─ reports/              # 產出的報表(不進版控)
+├─ backups/              # update_excel.py --apply 前的自動備份
+└─ docs/
+   └─ 方舟運算_操作流程.md
 ```
+
+### 資料來源(全部免費、不需 API Key,已實測可用)
+
+| 用途 | 端點 |
+|---|---|
+| 上市收盤價 | `openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL` |
+| 上櫃收盤價 | `www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes` |
+| 個股基本資料(產業別) | `openapi.twse.com.tw/v1/opendata/t187ap03_L` |
+| 月營收 | `openapi.twse.com.tw/v1/opendata/t187ap05_L` |
+
+已知特性,改程式時別踩回去:
+
+- **兩市場更新時間不同步**。TPEx 常比 TWSE 早幾小時,同一次執行可能拿到不同交易日,
+  所以依「市場 + 資料日期」分開存檔,不硬湊成同一天。
+- **TPEx 回傳含 9,000+ 筆權證**。過濾規則:6 碼且前兩碼屬於
+  `03~08`(上市權證)或 `70~73`(上櫃權證)。
+  不可用「6 碼且非 0 開頭」這種粗規則 —— 會誤殺 `2887Z1` 特別股與 `910322` 等 DR。
+- **TPEx 回應約 4MB,實測常中途斷線**,`fetch()` 的重試不是防禦性程式碼,是必要的。
+- **大俠武林的 Excel 原本是 Google Sheets**,「即時股價」欄是 `GOOGLEFINANCE` 公式,
+  下載成 xlsx 後才失效。在 Google 試算表裡本來就會自動更新,回填反而會把公式寫死。
+- 那些 xlsx 含繪圖物件,openpyxl 儲存會重寫整個檔案並使其永久遺失,
+  所以 `update_excel.py` 預設只預演,`--apply` 才寫入且一定先備份。
 
 **注意**:`.gdoc` / `.gsheet` 只是 Google 雲端的捷徑檔(189 bytes),本機讀不到內容。要程式處理這些資料,得先另存為 xlsx/csv,或改用 Google Sheets API。
 
@@ -83,15 +113,33 @@
 
 ## 四、待辦 Backlog
 
-初始化時尚未決定,開工時逐項確認:
+### 卡住,需要本人決定
 
-- [ ] 決定要追蹤的標的清單(個股 / ETF / 債券)存成哪種格式
-- [ ] 決定資料來源:TWSE 公開資訊觀測站?FinMind?yfinance?券商 API?
-- [ ] 若需 API Key,建立 `.env` 存放(已被 `.gitignore` 排除)
-- [ ] 建立第一支抓取腳本 `scripts/`,先做最小可行版本
-- [ ] 決定報表格式與更新頻率(每日 / 每週 / 每月營收公布後)
-- [ ] 評估「大俠武林」既有 Excel 表哪些欄位值得自動化填入
-- [ ] 評估是否用 Google Sheets API 直接讀寫既有 `.gsheet`
+- [ ] **券商是哪一家?** 這是整條鏈的真正起點 —— 庫存與成本只能從券商取得,方舟運算沒有 API
+- [ ] 券商有沒有提供對帳單 / 庫存匯出(csv、xlsx)?有的話完全不必截圖 OCR
+- [ ] 主要是台股、美股,還是兩者都有?(決定要不要串美股報價)
+- [ ] 是否真的需要寫回方舟 APP,還是有庫存紀錄與報表就夠?
+
+### 下一步可做
+
+- [ ] 月營收抓取與「創歷史新高 / 連續三月創高」篩選(取代 2021 年的舊 xlsx)
+- [ ] 美股報價來源(目前 `fetch_prices.py` 只有台股,美股部位不計價)
+- [ ] 排程每日自動執行 fetch_prices(Windows 工作排程器)
+- [ ] 庫存快照歷史化:`data/holdings/history/YYYY-MM-DD_holdings.csv`
+
+### 已完成
+
+- [x] 決定資料來源 → TWSE / TPEx 官方 OpenAPI,免費不需 Key
+- [x] 第一支抓取腳本 `scripts/fetch_prices.py`
+- [x] 持股摘要報表 `scripts/make_report.py`
+- [x] Excel 回填 `scripts/update_excel.py`(預設預演)
+- [x] 理解方舟運算操作流程 → `docs/方舟運算_操作流程.md`
+
+### 已評估,結論是不做
+
+- **用 Google Sheets API 讀寫既有 `.gsheet`**:那些表用的是 `GOOGLEFINANCE` 公式,
+  在 Google 試算表裡本來就會自動更新股價,再串 API 灌價格是多餘的。
+  真正值得串 API 的是「把庫存與成本寫進去」,等券商來源確定後再評估。
 
 ---
 
@@ -104,3 +152,25 @@
 - 建立 `CLAUDE.md`(本檔)、`.gitignore`(白名單模式)。
 - `git init`,建立初始 commit。
 - 尚未寫任何程式,資料來源與標的清單待決定。
+
+### 2026-08-06 — 開工:第一支腳本 + 方舟運算流程理解
+
+**環境**:Python 3.12.0,pandas / openpyxl / requests / lxml / bs4 / matplotlib 皆已安裝。
+
+**完成**:
+
+1. `scripts/fetch_prices.py` — 抓上市 1,377 檔 + 上櫃 1,012 檔收盤價,實測可跑。
+2. `scripts/make_report.py` — 產出持股市值 / 損益 Markdown 摘要。
+   美股目前無報價來源,會明確標示「查無報價」而不是拿舊價充數。
+3. `scripts/update_excel.py` — 回填收盤價到大俠武林 Excel,預設預演。
+4. `docs/方舟運算_操作流程.md` — 整理 LINE 社群記錄的完整操作流程與風險評估。
+5. `.gitignore` 補強:排除 `data/`、`reports/`、`方舟運算/`(社群對話含大量他人個資)。
+
+**關鍵發現**:
+
+- **方舟運算是手機 APP,沒有 API**。Windows 要靠 MuMuPlayer 模擬器 + GUI 自動化。
+- **資料流方向與直覺相反**:庫存是從券商流「進」方舟,不是從方舟抓出來。
+  所以「透過方舟抓取庫存和成本」實務上得改成「從券商取得,再寫進方舟」。
+- 大俠武林 Excel 的股價欄是 `GOOGLEFINANCE` 公式(原本是 Google Sheets)。
+
+**待本人決定**:券商是哪一家、有無庫存匯出功能。這是庫存自動化的唯一起點。

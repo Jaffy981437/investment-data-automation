@@ -58,6 +58,20 @@ client_secret*.json
 config.local.*
 settings.local.*
 
+# --- 投資資料:個人部位與大量行情檔不進版控 ---
+# 檔案本身仍留在 Google Drive(等於雲端備份),只是不進 git。
+# 理由:庫存與成本屬個人財務資料;行情 csv 每天新增數 MB,會讓 repo 迅速肥大。
+data/prices/
+# 用 /* 而非 /,否則 git 不會遞迴進目錄,底下的 ! 例外規則不會生效
+data/holdings/*
+!data/holdings/*.example.csv
+reports/
+
+# --- 第三方個資:社群對話匯出含大量他人姓名與對話,不進版控 ---
+# 重點已整理成 docs/方舟運算_操作流程.md,原始檔留在 Google Drive 即可
+方舟運算/
+*[LINE]*
+
 # --- Python ---
 __pycache__/
 *.py[cod]
