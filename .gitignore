@@ -66,6 +66,8 @@ data/prices/
 data/holdings/*
 !data/holdings/*.example.csv
 reports/
+# 方舟 APP 的 UI dump 與截圖,可能含帳號與庫存數字
+data/ark/
 
 # --- 第三方個資:社群對話匯出含大量他人姓名與對話,不進版控 ---
 # 重點已整理成 docs/方舟運算_操作流程.md,原始檔留在 Google Drive 即可
