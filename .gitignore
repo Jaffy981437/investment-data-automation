@@ -95,6 +95,9 @@ desktop.ini
 .vscode/
 .idea/
 
+# --- Claude Code 工作目錄(worktree、session 暫存)---
+.claude/
+
 # --- Google Drive 捷徑檔(本機無實際內容)---
 *.gdoc
 *.gsheet
