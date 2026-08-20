@@ -26,6 +26,12 @@ jobs:
       - name: 執行抓取
         run: python scripts/fetch_prices.py
 
-      # 注意:.gitignore 排除了 data/prices/,本次執行結果不會 commit 回 repo。
-      # 這一步純粹驗證腳本可正常執行、資料來源可正常存取。
-      # 如果之後想保留每日資料,可以在此加上 upload-artifact 或改 commit 邏輯。
+      # .gitignore 排除了 data/prices/,抓到的 csv 不會 commit 回 repo(避免 repo 肥大)。
+      # 改用 artifact 保留:GitHub 上可直接下載,預設留存 90 天,不佔 repo 空間。
+      - name: 保留抓取結果
+        uses: actions/upload-artifact@v4
+        with:
+          name: prices-${{ github.run_id }}
+          path: data/prices/
+          retention-days: 90
+          if-no-files-found: error  # 沒產出檔案就讓這步失敗,避免無聲成功

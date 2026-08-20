@@ -47,6 +47,8 @@
 
 ```
 13_投資/
+├─ .github/workflows/
+│  └─ fetch_prices.yml   # 排程每日抓收盤價(平日台北 18:00)
 ├─ scripts/
 │  ├─ fetch_prices.py    # 抓上市+上櫃每日收盤價 → data/prices/
 │  ├─ make_report.py     # 庫存 × 收盤價 → reports/ 持股摘要
@@ -113,27 +115,31 @@
 
 ## 四、待辦 Backlog
 
-### 卡住,需要本人決定
+### 卡住,需要本人操作(程式已備妥,等環境)
 
-- [ ] **券商是哪一家?** 這是整條鏈的真正起點 —— 庫存與成本只能從券商取得,方舟運算沒有 API
-- [ ] 券商有沒有提供對帳單 / 庫存匯出(csv、xlsx)?有的話完全不必截圖 OCR
-- [ ] 主要是台股、美股,還是兩者都有?(決定要不要串美股報價)
-- [ ] 是否真的需要寫回方舟 APP,還是有庫存紀錄與報表就夠?
+- [ ] **申請開通永豐 Shioaji API**(https://ai.sinotrade.com.tw/,線上申辦)
+      → 開通後填 `.env`,即可實測 `scripts/fetch_holdings_sinopac.py`
+- [ ] **安裝 adb(platform-tools)並開啟 Android USB 偵錯**
+      → 本機目前查無 `adb` 指令,`scripts/ark/probe_ark.py` 無從跑起
+
+> 券商相關的決策已在 2026-08-06 完成,詳見 `docs/庫存自動化_規劃.md`:
+> 5 家券商(永豐、新光、富邦、土銀、Firstrade)已盤點,永豐走 API、富邦暫不納入、其餘走網頁 DOM。
 
 ### 方舟自動化(B 段)— 規劃完成,卡在環境
 
 詳見 `docs/方舟自動化_詳細規劃.md`。關鍵決定:**不走社群的「截圖點像素」,改走 ADB + uiautomator**,
 用元件文字定位而非像素座標,介面改版比較不會壞,也不需要 Computer Use 桌面權限。
 
-- [ ] **你的手機是 Android 還是 iPhone?** Android 可直接 USB + ADB,完全不用裝模擬器
-- [ ] 裝好模擬器(或接上手機)後跑 `py scripts/ark/probe_ark.py` 驗證 UI 樹可讀性
+手機系統已確認:**Android、iPhone 都有 → 走 Android + USB/ADB,不必裝模擬器**。
+範圍已收斂成只做「庫存」同步,不動布局自選。
+
+- [ ] 裝好 adb、接上手機後跑 `py scripts/ark/probe_ark.py` 驗證 UI 樹可讀性
 - [ ] 依驗證結果決定走 ADB 路線或視覺路線
 
 ### 下一步可做
 
 - [ ] 月營收抓取與「創歷史新高 / 連續三月創高」篩選(取代 2021 年的舊 xlsx)
 - [ ] 美股報價來源(目前 `fetch_prices.py` 只有台股,美股部位不計價)
-- [ ] 排程每日自動執行 fetch_prices(Windows 工作排程器)
 - [ ] 庫存快照歷史化:`data/holdings/history/YYYY-MM-DD_holdings.csv`
 
 ### 已完成
@@ -143,6 +149,9 @@
 - [x] 持股摘要報表 `scripts/make_report.py`
 - [x] Excel 回填 `scripts/update_excel.py`(預設預演)
 - [x] 理解方舟運算操作流程 → `docs/方舟運算_操作流程.md`
+- [x] **排程每日自動執行 fetch_prices** → 改用 GitHub Actions,不用 Windows 工作排程器
+      (原規劃是工作排程器,但那需要電腦開著;GitHub Actions 免費且不必顧機器)
+- [x] 推上 GitHub → https://github.com/Jaffy981437/investment-data-automation(Public)
 
 ### 已評估,結論是不做
 
@@ -183,3 +192,40 @@
 - 大俠武林 Excel 的股價欄是 `GOOGLEFINANCE` 公式(原本是 Google Sheets)。
 
 **待本人決定**:券商是哪一家、有無庫存匯出功能。這是庫存自動化的唯一起點。
+
+### 2026-08-21 — 上 GitHub + 排程自動化
+
+**完成**:
+
+1. **repo 推上 GitHub**:https://github.com/Jaffy981437/investment-data-automation(**Public**)
+   - 推送前確認過 tracked 檔案無敏感資料(只有 `.env.example`,無真實金鑰)
+   - 白名單 `.gitignore` 有效運作,`data/`、`reports/`、`方舟運算/` 都沒被帶上去
+2. **GitHub Actions 排程** `.github/workflows/fetch_prices.yml`
+   - 平日台北時間 18:00 執行(`cron: "0 10 * * 1-5"`,UTC+8 換算)
+   - 只裝 `requests`(fetch_prices.py 唯一依賴,不需 pandas/shioaji)
+   - 抓到的 csv **不 commit 回 repo**,改用 `upload-artifact` 保留 90 天可下載
+   - 有 `workflow_dispatch`,可在 GitHub 網頁手動觸發
+   - 已手動觸發驗證通過(23 秒完成,2330/0050/0056/00919 收盤價正確)
+
+**工具安裝踩雷紀錄**(下次不用重踩):
+
+- `winget install --id GitHub.cli` 在這台機器**必定失敗**,exit code 1603,
+  日誌只有一句 "Install server not responding"。**用系統管理員身分執行也一樣失敗**,
+  所以不是權限問題,是 winget 安裝服務本身的問題。
+- **解法:用免安裝版**。下載官方 zip 解壓到 `C:\Users\user\tools\gh\bin\gh.exe`,
+  再把該目錄加進使用者 PATH。已完成,`gh` 現在全域可用。
+- `gh repo create --source=.` 在這個 worktree 會誤判「不是 git repo」
+  (疑似中文路徑 + git worktree 結構),**改成先建空 repo、再手動 `git remote add` 即可**。
+
+**待注意**:
+
+- 本次是從 worktree 分支 `claude/project-initialization-kickoff-a76afa` 推到遠端 `main`。
+  主工作目錄的本機 `main` 分支目前**落後遠端**,下次在主目錄工作前要先 `git pull`。
+- GitHub Actions 排程不保證準點(官方說明可能延遲數分鐘至數十分鐘),非設定錯誤。
+
+**產出的研究報告**(非程式,存在 `reports/`,不進版控):
+
+- `reports/投資Anthropic.html` — Anthropic 美股曝險研究,15 章節單檔 HTML。
+  內容:六家持有 Anthropic 的美股、兩種占比排序、進場時機與估值階梯、IPO 時程推算、
+  上市後四個傳導管道、AWS 獲利原理、雲端規模排名、GOOGL/GOOG 股別差異。
+  **含免責聲明與利益揭露,非投資建議。**關鍵推估值待 Anthropic 公開版 S-1 出爐後需更新。
