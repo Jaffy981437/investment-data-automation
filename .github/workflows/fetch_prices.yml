@@ -1,0 +1,31 @@
+name: 抓取台股收盤價
+
+# 台股平日收盤後,兩個市場資料陸續發布(TPEx 較早、TWSE 常晚幾小時)。
+# UTC 10:00 = 台北時間 18:00,週一~週五,留足緩衝等資料到齊。
+# GitHub Actions 的排程時間不保證準點,實務上可能晚幾到幾十分鐘。
+on:
+  schedule:
+    - cron: "0 10 * * 1-5"
+  workflow_dispatch: {}  # 允許在 GitHub 網頁上手動觸發,方便測試
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 簽出程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 安裝依賴(僅 fetch_prices.py 需要的)
+        run: pip install requests
+
+      - name: 執行抓取
+        run: python scripts/fetch_prices.py
+
+      # 注意:.gitignore 排除了 data/prices/,本次執行結果不會 commit 回 repo。
+      # 這一步純粹驗證腳本可正常執行、資料來源可正常存取。
+      # 如果之後想保留每日資料,可以在此加上 upload-artifact 或改 commit 邏輯。
