@@ -219,8 +219,6 @@
 
 **待注意**:
 
-- 本次是從 worktree 分支 `claude/project-initialization-kickoff-a76afa` 推到遠端 `main`。
-  主工作目錄的本機 `main` 分支目前**落後遠端**,下次在主目錄工作前要先 `git pull`。
 - GitHub Actions 排程不保證準點(官方說明可能延遲數分鐘至數十分鐘),非設定錯誤。
 
 **產出的研究報告**(非程式,存在 `reports/`,不進版控):
@@ -229,3 +227,27 @@
   內容:六家持有 Anthropic 的美股、兩種占比排序、進場時機與估值階梯、IPO 時程推算、
   上市後四個傳導管道、AWS 獲利原理、雲端規模排名、GOOGL/GOOG 股別差異。
   **含免責聲明與利益揭露,非投資建議。**關鍵推估值待 Anthropic 公開版 S-1 出爐後需更新。
+
+### 2026-08-21 — 收工:主目錄清理 + 版控收尾
+
+**完成**:
+
+1. 主工作目錄的 `main` 分支 fast-forward 同步到遠端最新(`ea758c5` → `1542fb7`),
+   worktree 與主目錄、遠端三邊一致,不再有分支落後問題。
+2. 盤點主目錄實體檔案,發現 `.claude/`(Claude Code 的 session/worktree 暫存目錄,
+   裡面會複製整份 worktree 含巢狀 `.git`)沒被 `.gitignore` 排除,已補上規則並確認生效。
+3. 其餘既有檔案(`大俠武林/`、`投資/`、`方舟運算/`、各種 `.gdoc`/`.gsheet`、
+   `shioaji.log` 等)確認都被白名單式 `.gitignore` 正確排除,沒有異常,未搬動任何檔案。
+4. Commit `6e13967`,working tree 乾淨,已推上遠端。
+
+**本次對話另外討論、但未落地成程式的部分**:
+
+- **VPS 架設**:純諮詢,結論是「不需要跟 AWS/Azure/GCP 那三家綁在一起」,
+  VPS(Hetzner/Vultr/DigitalOcean 等)是完全不同市場。也比較過 VPS vs
+  GitHub Actions vs Windows 工作排程器三種抓價排程方案的取捨。**沒有建立任何 VPS 或帳號。**
+  若之後要架 VPS(例如放永豐 API 或跑常駐服務),要記得 `.env` 敏感資料上雲端主機的風險評估。
+
+**下次「開工」時的優先順序建議**:
+
+1. 卡住的兩件事仍是本人動作:開通永豐 Shioaji API、裝 adb 開 USB 偵錯
+2. 不受阻的下一步:月營收抓取與創高篩選(取代 2021 舊 xlsx)、美股報價來源
